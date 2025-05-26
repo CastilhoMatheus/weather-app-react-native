@@ -1,6 +1,7 @@
 import theme from "@/assets/theme";
 import { DailyForecast } from "@/assets/types";
 import WeatherCard from "@/components/WeatherCard";
+import useLocation from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
 import { getFiveDaysForecast } from "@/lib/weatherApi";
 import { useEffect, useState } from "react";
@@ -16,19 +17,10 @@ export default function HomeScreen() {
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { location, errorMsg } = useLocation();
 
-  const forecastData = [
-    { day: "Mon", condition: "Sunny", high: 78, low: 65 },
-    { day: "Tue", condition: "Partly Cloudy", high: 76, low: 64 },
-    { day: "Wed", condition: "Rain", high: 70, low: 62 },
-    { day: "Thu", condition: "Cloudy", high: 72, low: 63 },
-    { day: "Fri", condition: "Sunny", high: 80, low: 68 },
-  ];
 
-  const lat = -22.906847; // Example: Dublin
-  const lon = -43.172897;
-
-  const [weather] = useWeather(lat, lon);
+  const [weather] = useWeather(location);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -39,10 +31,13 @@ export default function HomeScreen() {
   useEffect(() => {
     const fetchForecast = async () => {
       try {
-        const data = await getFiveDaysForecast(lat, lon);
-        data.shift(); // skips today
-
-        setForecast(data);
+        if (location?.coords.latitude !== undefined && location?.coords.longitude !== undefined) {
+          const data = await getFiveDaysForecast(location.coords.latitude, location.coords.longitude);
+          data.shift(); // skips today
+          setForecast(data);
+        } else {
+          console.error("Location coordinates are undefined");
+        }
       } catch (err) {
         if (err instanceof Error) {
           console.error("Error:", err.message);
@@ -51,8 +46,11 @@ export default function HomeScreen() {
         }
       }
     };
-    fetchForecast();
-  }, []);
+    if (location) {
+      fetchForecast();
+    }
+    
+  }, [location]);
 
   return (
     <ScrollView
@@ -62,6 +60,7 @@ export default function HomeScreen() {
       }
     >
       <Text style={styles.title}>Current Weather</Text>
+      
 
       <WeatherCard
         city={weather?.name || "Not Found"}

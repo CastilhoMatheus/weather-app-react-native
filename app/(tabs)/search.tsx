@@ -25,6 +25,7 @@ export default function SearchScreen() {
         city: weather.name,
         temperature: Math.round(weather.main.temp),
         condition: weather.weather[0].main,
+        
       };
       setSearchResults([...searchResults, extractedData]);
       setSearchQuery("");
