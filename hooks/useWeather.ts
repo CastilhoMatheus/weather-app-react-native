@@ -3,6 +3,7 @@ import { getWeatherByCoords } from "@/lib/weatherApi";
 import { useEffect, useState } from "react";
 
 export const useWeather = (location: { coords: { latitude: number; longitude: number } } | null) => {
+  
   const [weather, setWeather] = useState<WeatherApiResponse>(null);
 
   useEffect(() => {
@@ -14,7 +15,6 @@ export const useWeather = (location: { coords: { latitude: number; longitude: nu
         } else {
           console.error("Coordinates are undefined");
         }
-        setWeather(weather);
       } catch (err) {
         if (err instanceof Error) {
           console.error("Error:", err.message);
@@ -27,6 +27,6 @@ export const useWeather = (location: { coords: { latitude: number; longitude: nu
       fetchWeather();
     }
   }, [location]);
-
+  
   return [weather];
 };

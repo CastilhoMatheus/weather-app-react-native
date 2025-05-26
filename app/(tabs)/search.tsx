@@ -4,12 +4,11 @@ import SearchBar from "@/components/SearchBar";
 import WeatherCard from "@/components/WeatherCard";
 import { getPossibleCitiesCords, getWeatherByCoords } from "@/lib/weatherApi";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<WheatherCardProps[]>([]);
-  const [locationOptions, setLocationOptions] = useState<any[]>([]);
 
   const handleCityName = (query: string) => {
     setSearchQuery(query);
@@ -18,26 +17,24 @@ export default function SearchScreen() {
   const handleSearch = async (query: string) => {
     try {
       const locations = await getPossibleCitiesCords(query);
-      setLocationOptions(locations);
-    } catch (error) {
-      console.error("Error fetching city options", error);
-    }
-  };
 
-  const handleLocationSelect = async (item: any) => {
-    try {
-      const weather = await getWeatherByCoords(item.lat, item.lon);
-      const extractedData = {
-        id: `${item.lat},${item.lon}`,
-        city: `${item.name}, ${item.state ?? ""} ${item.country}`,
-        temperature: Math.round(weather.main.temp),
-        condition: weather.weather[0].main,
-      };
-      setSearchResults([...searchResults, extractedData]);
-      setLocationOptions([]);
+      // Get weather for all locations
+      const weatherResults = await Promise.all(
+        locations.map(async (item: any) => {
+          const weather = await getWeatherByCoords(item.lat, item.lon);
+          return {
+            id: `${item.lat},${item.lon}`,
+            city: `${item.name}, ${item.state ?? ""} ${item.country}`,
+            temperature: Math.round(weather.main.temp),
+            condition: weather.weather[0].main,
+          };
+        })
+      );
+
+      setSearchResults(weatherResults);
       setSearchQuery("");
     } catch (error) {
-      console.error("Error fetching weather", error);
+      console.error("Error fetching weather for locations", error);
     }
   };
 
@@ -50,38 +47,20 @@ export default function SearchScreen() {
         placeholder="Search for a city..."
       />
 
-      {locationOptions.length > 0 ? (
+      {searchResults.length > 0 && (
         <FlatList
-          data={locationOptions}
+          data={searchResults}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Pressable
-              style={styles.locationOption}
-              onPress={() => handleLocationSelect(item)}
-            >
-              <Text style={styles.optionText}>
-                {item.name}, {item.state ?? ""}, {item.country}
-              </Text>
-            </Pressable>
+            <WeatherCard
+              city={item.city}
+              temperature={item.temperature}
+              condition={item.condition}
+              showSaveButton
+            />
           )}
-          contentContainerStyle={{ paddingTop: 10 }}
+          contentContainerStyle={styles.listContent}
         />
-      ) : (
-        searchResults.length > 0 && (
-          <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <WeatherCard
-                city={item.city}
-                temperature={item.temperature}
-                condition={item.condition}
-                showSaveButton
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-          />
-        )
       )}
     </View>
   );
