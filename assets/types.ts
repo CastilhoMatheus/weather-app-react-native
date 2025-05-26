@@ -43,6 +43,7 @@ export type WeatherApiResponse = {
 } | null;
 
 export type WheatherCardProps = {
+  id: string, 
   city: string;
   temperature: number;
   condition: string;
@@ -71,3 +72,4 @@ export type RawForecastItem = {
     icon: string;
   }[];
 };
+

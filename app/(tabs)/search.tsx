@@ -1,16 +1,15 @@
 import theme from "@/assets/theme";
+import { WheatherCardProps } from "@/assets/types";
 import SearchBar from "@/components/SearchBar";
 import WeatherCard from "@/components/WeatherCard";
-import { getCoordsByCity, getWeatherByCoords } from "@/lib/weatherApi";
+import { getPossibleCitiesCords, getWeatherByCoords } from "@/lib/weatherApi";
 import { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([
-    { id: "1", city: "London", temperature: 58, condition: "Cloudy" },
-    { id: "2", city: "Paris", temperature: 62, condition: "Partly Cloudy" },
-  ]);
+  const [searchResults, setSearchResults] = useState<WheatherCardProps[]>([]);
+  const [locationOptions, setLocationOptions] = useState<any[]>([]);
 
   const handleCityName = (query: string) => {
     setSearchQuery(query);
@@ -18,19 +17,27 @@ export default function SearchScreen() {
 
   const handleSearch = async (query: string) => {
     try {
-      const { lat, lon } = await getCoordsByCity(query);
-      const weather = await getWeatherByCoords(lat, lon);
+      const locations = await getPossibleCitiesCords(query);
+      setLocationOptions(locations);
+    } catch (error) {
+      console.error("Error fetching city options", error);
+    }
+  };
+
+  const handleLocationSelect = async (item: any) => {
+    try {
+      const weather = await getWeatherByCoords(item.lat, item.lon);
       const extractedData = {
-        id: weather.id,
-        city: weather.name,
+        id: `${item.lat},${item.lon}`,
+        city: `${item.name}, ${item.state ?? ""} ${item.country}`,
         temperature: Math.round(weather.main.temp),
         condition: weather.weather[0].main,
-        
       };
       setSearchResults([...searchResults, extractedData]);
+      setLocationOptions([]);
       setSearchQuery("");
     } catch (error) {
-      console.error("Error fetching location", error);
+      console.error("Error fetching weather", error);
     }
   };
 
@@ -43,22 +50,38 @@ export default function SearchScreen() {
         placeholder="Search for a city..."
       />
 
-      {searchResults.length > 0 ? (
+      {locationOptions.length > 0 ? (
         <FlatList
-          data={searchResults}
+          data={locationOptions}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <WeatherCard
-              city={item.city}
-              temperature={item.temperature}
-              condition={item.condition}
-              showSaveButton
-            />
+            <Pressable
+              style={styles.locationOption}
+              onPress={() => handleLocationSelect(item)}
+            >
+              <Text style={styles.optionText}>
+                {item.name}, {item.state ?? ""}, {item.country}
+              </Text>
+            </Pressable>
           )}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingTop: 10 }}
         />
       ) : (
-        <Text style={styles.noResults}>No results found</Text>
+        searchResults.length > 0 && (
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <WeatherCard
+                city={item.city}
+                temperature={item.temperature}
+                condition={item.condition}
+                showSaveButton
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+          />
+        )
       )}
     </View>
   );
@@ -78,5 +101,17 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xl,
     color: theme.colors.textSecondary,
     fontSize: theme.fontSize.lg,
+  },
+  locationOption: {
+    padding: 12,
+    backgroundColor: theme.colors.cardBackground,
+    marginBottom: 6,
+    borderRadius: 8,
+    color: theme.colors.text,
+    fontSize: theme.fontSize.md,
+  },
+  optionText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSize.md,
   },
 });

@@ -50,3 +50,20 @@ export async function getFiveDaysForecast(
   );
   return forecastData;
 }
+
+export async function getPossibleCitiesCords(city: string) {
+  const limit = 5;
+  const response = await fetch(
+    `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=${limit}&appid=${API_KEY}`
+  );
+  const data = await response.json();
+  if (!data.length) throw new Error("City not found");
+  return data.map((item: any, index: number) => ({
+    id: `${item.lat},${item.lon}-${index}`,
+    name: item.name,
+    state: item.state,
+    country: item.country,
+    lat: item.lat,
+    lon: item.lon,
+  }));
+}
