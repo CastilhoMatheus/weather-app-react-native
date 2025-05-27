@@ -1,16 +1,8 @@
 import theme from "@/assets/theme";
+import { WheatherCardProps } from "@/assets/types";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type WeatherCardProps = {
-  city: string;
-  temperature: number;
-  condition: string;
-  high?: number;
-  low?: number;
-  showSaveButton?: boolean;
-  showDeleteButton?: boolean;
-};
 
 export default function WeatherCard({
   city,
@@ -20,17 +12,18 @@ export default function WeatherCard({
   low,
   showSaveButton,
   showDeleteButton,
-}: WeatherCardProps) {
+  onPress
+}: WheatherCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={styles.city}>{city}</Text>
         {(showSaveButton || showDeleteButton) && (
-          <TouchableOpacity>
+          <TouchableOpacity onPress={onPress}>
             <Ionicons
               name={showSaveButton ? "bookmark-outline" : "trash-outline"}
               size={24}
-              color={theme.colors.primary}
+              color={showSaveButton ? theme.colors.primary : theme.colors.error}
             />
           </TouchableOpacity>
         )}

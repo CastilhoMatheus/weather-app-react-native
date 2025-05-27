@@ -63,6 +63,7 @@ export default function HomeScreen() {
       
 
       <WeatherCard
+        id={`${location?.coords.latitude}`}
         city={weather?.name || "Not Found"}
         temperature={Math.round(weather?.main.temp || 0)}
         condition={weather?.weather[0].main || "undefined"}

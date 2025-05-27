@@ -43,7 +43,7 @@ export type WeatherApiResponse = {
 } | null;
 
 export type WheatherCardProps = {
-  id: string, 
+  id?: string, 
   city: string;
   temperature: number;
   condition: string;
@@ -51,6 +51,9 @@ export type WheatherCardProps = {
   low?: number;
   showSaveButton?: boolean;
   showDeleteButton?: boolean;
+  lat?: number;
+  lon?: number;
+  onPress?: () => void;
 };
 
 export type DailyForecast = {
@@ -73,3 +76,8 @@ export type RawForecastItem = {
   }[];
 };
 
+export type SavedLocation = {
+  name: string;
+  lat: number;
+  lon: number;
+};

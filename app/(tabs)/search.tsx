@@ -2,6 +2,7 @@ import theme from "@/assets/theme";
 import { WheatherCardProps } from "@/assets/types";
 import SearchBar from "@/components/SearchBar";
 import WeatherCard from "@/components/WeatherCard";
+import { saveLocation } from "@/lib/storage";
 import { getPossibleCitiesCords, getWeatherByCoords } from "@/lib/weatherApi";
 import { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
@@ -27,6 +28,8 @@ export default function SearchScreen() {
             city: `${item.name}, ${item.state ?? ""} ${item.country}`,
             temperature: Math.round(weather.main.temp),
             condition: weather.weather[0].main,
+            lat: item.lat,
+            lon: item.lon
           };
         })
       );
@@ -38,6 +41,22 @@ export default function SearchScreen() {
     }
   };
 
+  const handleSave = async (item: WheatherCardProps) => {
+    if (item.lat !== undefined && item.lon !== undefined) {
+      try {
+        const locationToSave = {
+          name: item.city,
+          lat: item.lat,
+          lon: item.lon
+        };
+        await saveLocation(locationToSave);
+      } catch (err) {
+        console.error('Failed to save location:', err);
+      }
+    }
+    setSearchResults([])
+  };
+  
   return (
     <View style={styles.container}>
       <SearchBar
@@ -46,17 +65,19 @@ export default function SearchScreen() {
         onSearch={() => handleSearch(searchQuery)}
         placeholder="Search for a city..."
       />
-
+      
       {searchResults.length > 0 && (
         <FlatList
           data={searchResults}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <WeatherCard
+              id={item.id}
               city={item.city}
               temperature={item.temperature}
               condition={item.condition}
               showSaveButton
+              onPress={() => handleSave(item)}
             />
           )}
           contentContainerStyle={styles.listContent}
