@@ -43,7 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="saved"
         options={{
-          title: "Saved",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Ionicons name="bookmark-outline" size={24} color={color} />
           ),

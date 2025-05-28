@@ -1,26 +1,28 @@
-import theme from "@/assets/theme";
-import { DailyForecast } from "@/assets/types";
-import WeatherCard from "@/components/WeatherCard";
-import WeatherInfoCard from "@/components/WeatherInfoCard";
-import useLocation from "@/hooks/useLocation";
-import { useWeather } from "@/hooks/useWeather";
-import { getFiveDaysForecast } from "@/lib/weatherApi";
-import { useEffect, useState } from "react";
+import theme from '@/assets/theme';
+import { DailyForecast } from '@/assets/types';
+import WeatherCard from '@/components/WeatherCard';
+import WeatherInfoCard from '@/components/WeatherInfoCard';
+import { useWeather } from '@/hooks/useWeather';
+import { getSavedLocations } from '@/lib/storage';
+import { getFiveDaysForecast } from '@/lib/weatherApi';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
 
-export default function HomeScreen() {
+export default function CityDetails() {
   const [forecast, setForecast] = useState<DailyForecast[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { location, errorMsg } = useLocation();
-
-
-  const [weather, extraInfo] = useWeather(location);
+  const { city } = useLocalSearchParams();
+  const [coords, setCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -29,28 +31,46 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    const fetchCoords = async () => {
+      const saved = await getSavedLocations();
+      const match = saved.find((loc) => loc.name === city);
+      if (match) {
+        setCoords({ latitude: match.lat, longitude: match.lon });
+      }
+    };
+    fetchCoords();
+  }, [city]);
+
+  useEffect(() => {
     const fetchForecast = async () => {
       try {
-        if (location?.coords.latitude !== undefined && location?.coords.longitude !== undefined) {
-          const data = await getFiveDaysForecast(location.coords.latitude, location.coords.longitude);
+        if (coords) {
+          const data = await getFiveDaysForecast(
+            coords.latitude,
+            coords.longitude
+          );
           data.shift(); // skips today
           setForecast(data);
         } else {
-          console.error("Location coordinates are undefined");
+          console.error('Location coordinates are undefined');
         }
       } catch (err) {
         if (err instanceof Error) {
-          console.error("Error:", err.message);
+          console.error('Error:', err.message);
         } else {
-          console.error("Unknown error:", err);
+          console.error('Unknown error:', err);
         }
       }
     };
-    if (location) {
+    if (coords) {
       fetchForecast();
     }
-    
-  }, [location]);
+  }, [coords]);
+
+  // Pass coords wrapped in an object with `coords` key or null
+  const [weather, extraInfo] = useWeather(coords ? { coords } : null);
+
+  if (!weather) return <Text>Loading...</Text>;
 
   return (
     <ScrollView
@@ -60,12 +80,11 @@ export default function HomeScreen() {
       }
     >
       <Text style={styles.title}>Current Weather</Text>
-      
 
       <WeatherCard
-        city={weather?.name || "Not Found"}
+        city={weather?.name || 'Not Found'}
         temperature={Math.round(weather?.main.temp || 0)}
-        condition={weather?.weather[0].main || "undefined"}
+        condition={weather?.weather[0].main || 'undefined'}
         high={Math.round(weather?.main.temp_max || 0)}
         low={Math.round(weather?.main.temp_min || 0)}
       />
@@ -98,13 +117,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: theme.fontSize.xxl,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
   subtitle: {
     fontSize: theme.fontSize.xl,
-    fontWeight: "600",
+    fontWeight: '600',
     color: theme.colors.text,
     marginVertical: theme.spacing.md,
   },
@@ -114,9 +133,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
   },
   forecastItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.background,
@@ -124,7 +143,7 @@ const styles = StyleSheet.create({
   day: {
     width: 40,
     fontSize: theme.fontSize.md,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: theme.colors.text,
   },
   condition: {
@@ -134,9 +153,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
   },
   temps: {
-    flexDirection: "row",
+    flexDirection: 'row',
     width: 80,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   high: {
     fontSize: theme.fontSize.md,

@@ -94,6 +94,5 @@ export const useWeather = (
       fetchWeather();
     }
   }, [location]);
-
   return [weather, extraInfo] as const;
 };
