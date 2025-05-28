@@ -1,6 +1,7 @@
 import theme from "@/assets/theme";
 import { DailyForecast } from "@/assets/types";
 import WeatherCard from "@/components/WeatherCard";
+import WeatherInfoCard from "@/components/WeatherInfoCard";
 import useLocation from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
 import { getFiveDaysForecast } from "@/lib/weatherApi";
@@ -20,7 +21,7 @@ export default function HomeScreen() {
   const { location, errorMsg } = useLocation();
 
 
-  const [weather] = useWeather(location);
+  const [weather, extraInfo] = useWeather(location);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -63,7 +64,6 @@ export default function HomeScreen() {
       
 
       <WeatherCard
-        id={`${location?.coords.latitude}`}
         city={weather?.name || "Not Found"}
         temperature={Math.round(weather?.main.temp || 0)}
         condition={weather?.weather[0].main || "undefined"}
@@ -85,13 +85,15 @@ export default function HomeScreen() {
           </View>
         ))}
       </View>
+      <Text style={styles.subtitle}>Today's Tips</Text>
+
+      <WeatherInfoCard info={extraInfo} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: theme.spacing.md,
     backgroundColor: theme.colors.background,
   },
